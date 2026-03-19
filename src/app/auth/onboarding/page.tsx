@@ -27,8 +27,10 @@ export default function OnboardingPage() {
       setLoading(false)
       return
     }
-    // Force a hard navigation instead of client-side redirect
-    // so the session is fully reloaded from the server
+    // Trigger a session update so the JWT gets refreshed from the DB
+    await update({ disclaimerAccepted: true })
+    // Small delay to ensure the token propagates
+    await new Promise(resolve => setTimeout(resolve, 500))
     window.location.href = '/dashboard'
   } catch {
     setError('Network error. Please try again.')

@@ -60,34 +60,38 @@ export const authOptions: NextAuthOptions = {
     ] : []),
   ],
 
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) token.id = user.id
-      return token
-    },
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string
-        // Attach disclaimer status so the UI can gate access
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.id as string },
-          select: { disclaimerAccepted: true, unitHeight: true, unitVelocity: true },
-        })
-        if (dbUser) {
-          session.user.disclaimerAccepted = dbUser.disclaimerAccepted
-          session.user.unitHeight = dbUser.unitHeight
-          session.user.unitVelocity = dbUser.unitVelocity
-        }
+ callbacks: {
+  async jwt({ token, user, trigger }) {
+    if (user) token.id = user.id
+    // Refresh disclaimerAccepted from DB on every token update
+    // and on explicit session refresh trigger
+    if (token.id && (trigger === 'update' || !token.disclaimerAccepted)) {
+      const dbUser = await prisma.user.findUnique({
+        where:  { id: token.id as string },
+        select: { disclaimerAccepted: true, unitHeight: true, unitVelocity: true },
+      })
+      if (dbUser) {
+        token.disclaimerAccepted = dbUser.disclaimerAccepted
+        token.unitHeight         = dbUser.unitHeight
+        token.unitVelocity       = dbUser.unitVelocity
       }
-      return session
-    },
-    // Redirect new OAuth users to onboarding (disclaimer)
-    async redirect({ url, baseUrl }) {
-      if (url.startsWith('/')) return `${baseUrl}${url}`
-      if (url.startsWith(baseUrl)) return url
-      return baseUrl
-    },
+    }
+    return token
   },
-}
+  async session({ session, token }) {
+    if (session.user) {
+      session.user.id                 = token.id as string
+      session.user.disclaimerAccepted = token.disclaimerAccepted as boolean ?? false
+      session.user.unitHeight         = token.unitHeight as string ?? 'ft'
+      session.user.unitVelocity       = token.unitVelocity as string ?? 'kt'
+    }
+    return session
+  },
+  async redirect({ url, baseUrl }) {
+    if (url.startsWith('/')) return `${baseUrl}${url}`
+    if (url.startsWith(baseUrl)) return url
+    return baseUrl
+  },
+},
 
 export default NextAuth(authOptions)
