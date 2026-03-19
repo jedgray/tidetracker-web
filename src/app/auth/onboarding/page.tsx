@@ -13,30 +13,27 @@ export default function OnboardingPage() {
   const [error,    setError]    = useState<string | null>(null)
 
   async function handleAccept() {
-  if (!accepted) { setError('You must accept the disclaimer to continue.'); return }
-  setLoading(true)
-  setError(null)
-  try {
-    const res = await fetch('/api/auth/accept-disclaimer', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ accepted: true }),
-    })
-    if (!res.ok) {
-      setError('Something went wrong. Please try again.')
+    if (!accepted) { setError('You must accept the disclaimer to continue.'); return }
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/auth/accept-disclaimer', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ accepted: true }),
+      })
+      if (!res.ok) {
+        setError('Something went wrong. Please try again.')
+        setLoading(false)
+        return
+      }
+      // Dashboard layout checks DB directly so no token refresh needed
+      window.location.href = '/dashboard'
+    } catch {
+      setError('Network error. Please try again.')
       setLoading(false)
-      return
     }
-    // Trigger a session update so the JWT gets refreshed from the DB
-    await update({ disclaimerAccepted: true })
-    // Small delay to ensure the token propagates
-    await new Promise(resolve => setTimeout(resolve, 500))
-    window.location.href = '/dashboard'
-  } catch {
-    setError('Network error. Please try again.')
-    setLoading(false)
   }
-}
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-10">
