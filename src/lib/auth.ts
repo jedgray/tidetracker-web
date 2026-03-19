@@ -62,22 +62,21 @@ export const authOptions: NextAuthOptions = {
 
  callbacks: {
   async jwt({ token, user, trigger }) {
-    if (user) token.id = user.id
-    // Refresh disclaimerAccepted from DB on every token update
-    // and on explicit session refresh trigger
-    if (token.id && (trigger === 'update' || !token.disclaimerAccepted)) {
-      const dbUser = await prisma.user.findUnique({
-        where:  { id: token.id as string },
-        select: { disclaimerAccepted: true, unitHeight: true, unitVelocity: true },
-      })
-      if (dbUser) {
-        token.disclaimerAccepted = dbUser.disclaimerAccepted
-        token.unitHeight         = dbUser.unitHeight
-        token.unitVelocity       = dbUser.unitVelocity
-      }
+  if (user) token.id = user.id
+  // Always refresh user flags from DB so middleware sees current values
+  if (token.id) {
+    const dbUser = await prisma.user.findUnique({
+      where:  { id: token.id as string },
+      select: { disclaimerAccepted: true, unitHeight: true, unitVelocity: true },
+    })
+    if (dbUser) {
+      token.disclaimerAccepted = dbUser.disclaimerAccepted
+      token.unitHeight         = dbUser.unitHeight
+      token.unitVelocity       = dbUser.unitVelocity
     }
-    return token
-  },
+  }
+  return token
+},
   async session({ session, token }) {
     if (session.user) {
       session.user.id                 = token.id as string

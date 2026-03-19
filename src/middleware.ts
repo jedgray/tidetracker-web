@@ -9,22 +9,25 @@ export default withAuth(
     // Already heading to onboarding — let it through
     if (pathname.startsWith('/auth/onboarding')) return NextResponse.next()
 
-    // OAuth users who haven't accepted the disclaimer yet
+    // Check disclaimer from token — the jwt callback now always
+    // fetches this fresh from DB when it's false
     if (token && !token.disclaimerAccepted) {
-      return NextResponse.redirect(new URL('/auth/onboarding', req.url))
+      const url = req.nextUrl.clone()
+      url.pathname = '/auth/onboarding'
+      // Add a cache-busting param to prevent browser caching the redirect
+      url.searchParams.set('t', Date.now().toString())
+      return NextResponse.redirect(url)
     }
 
     return NextResponse.next()
   },
   {
     callbacks: {
-      // Only run middleware on authenticated routes
       authorized: ({ token }) => !!token,
     },
   },
 )
 
-// Protect everything under /dashboard, /log, /analysis, /community
 export const config = {
   matcher: [
     '/dashboard/:path*',
