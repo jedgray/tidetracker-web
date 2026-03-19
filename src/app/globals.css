@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-blue:       #0a6bbd;
+    --color-blue-lt:    #deeefb;
+    --color-blue-dk:    #0c447c;
+    --color-teal:       #00897b;
+    --color-teal-lt:    #dff2ee;
+    --color-teal-dk:    #00695c;
+    --color-slack:      #059669;
+    --color-slack-lt:   #d1fae5;
+    --color-slack-dk:   #065f46;
+    --color-amber:      #b45309;
+    --color-amber-lt:   #fef3c7;
+    --color-red:        #dc2626;
+    --color-red-lt:     #fee2e2;
+    --color-purple:     #534ab7;
+    --color-purple-lt:  #eeedfe;
+  }
+
+  /* Leaflet needs explicit height on its container */
+  .leaflet-container {
+    height: 100%;
+    width:  100%;
+    z-index: 1;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-tide-blue text-white text-sm font-semibold transition-colors hover:bg-tide-blue-dk disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-red-50 border border-red-200 text-sm font-semibold text-red-700 transition-colors hover:bg-red-600 hover:text-white;
+  }
+  .input {
+    @apply w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder-gray-400 outline-none transition-colors focus:border-tide-blue focus:ring-1 focus:ring-tide-blue;
+  }
+  .label {
+    @apply block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1;
+  }
+  .card {
+    @apply bg-white rounded-xl border border-gray-100 shadow-sm;
+  }
+  .section-head {
+    @apply text-xs font-bold uppercase tracking-widest text-gray-400 pb-2 border-b border-gray-100;
+  }
+  /* Confidence pip colours */
+  .pip-0 { @apply bg-gray-200; }
+  .pip-1 { @apply bg-tide-teal-lt; }
+  .pip-2 { @apply bg-tide-teal; }
+  .pip-3 { @apply bg-tide-teal; }
+  .pip-4 { @apply bg-tide-teal-dk; }
+  .pip-5 { @apply bg-tide-slack-dk; }
+}

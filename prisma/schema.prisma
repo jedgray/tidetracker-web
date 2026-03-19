@@ -1,0 +1,178 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+// NextAuth / Auth.js required tables
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ── User ──────────────────────────────────────────────────────────────────────
+
+model User {
+  id                  String     @id @default(cuid())
+  name                String?
+  email               String?    @unique
+  emailVerified       DateTime?
+  image               String?
+  // Password hash for email/password sign-in
+  passwordHash        String?
+  // Onboarding
+  disclaimerAccepted  Boolean    @default(false)
+  disclaimerAcceptedAt DateTime?
+  // Preferences
+  unitHeight          String     @default("ft")   // "ft" | "m"
+  unitVelocity        String     @default("kt")   // "kt" | "mph" | "kph" | "m/s"
+  // Community sharing opt-in (default off — privacy by default)
+  shareLogsWithCommunity Boolean @default(false)
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  accounts    Account[]
+  sessions    Session[]
+  diveLogs    DiveLog[]
+}
+
+// ── Dive log ──────────────────────────────────────────────────────────────────
+
+model DiveLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Site
+  siteId      String
+  siteName    String
+  region      String
+
+  // Date and time
+  diveDate    DateTime
+  entryTime   String?   // "HH:MM" local time string
+  exitTime    String?
+  maxDepthFt  Int?
+
+  // Slack water observation — the core data for corrections
+  plannedSlack  String?  // "HH:MM" local time
+  observedSlack String?  // "HH:MM" local time
+  // Signed minutes: negative = slack arrived early, positive = late
+  deltaMinutes  Int?
+
+  // Station pairing used
+  currStationId   String?
+  currStationName String?
+  tideStationId   String?
+  tideStationName String?
+
+  // Observed conditions
+  visibilityFt  Int?
+  waterTempF    Int?
+  currentStrength Int?   // 0-4
+  currentStrengthLabel String?
+  conditions    String?  // "better" | "as-predicted" | "worse" | "no-plan"
+
+  // Rating and notes
+  rating  Int?    // 1-5
+  notes   String? @db.Text
+
+  // Community sharing: if true AND user.shareLogsWithCommunity is true,
+  // this log's deltaMinutes contributes to community correction aggregates.
+  sharedWithCommunity Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([siteId])
+  @@index([diveDate])
+  // Composite index for correction queries
+  @@index([siteId, deltaMinutes])
+}
+
+// ── Dive site reference data ──────────────────────────────────────────────────
+
+model DiveSite {
+  id           String  @id
+  name         String
+  region       String
+  lat          Float
+  lon          Float
+  type         String
+  depthFt      Int
+  skill        String   // "beginner" | "intermediate" | "advanced"
+  currentWarn  Boolean  @default(false)
+  description  String?  @db.Text
+  // Default station pairing (can be overridden per-user in future)
+  currStationId  String
+  tideStationId  String
+
+  @@index([region])
+}
+
+// ── Site correction cache ─────────────────────────────────────────────────────
+// Materialized per-site correction stats, updated whenever a new log is saved.
+// Separate rows for personal (userId set) and community (userId null) corrections.
+
+model SiteCorrection {
+  id          String  @id @default(cuid())
+  siteId      String
+  // null = community aggregate, userId = personal correction
+  userId      String?
+
+  // Station pairing this correction applies to
+  currStationId String
+  tideStationId String
+
+  // Correction stats
+  sampleSize    Int
+  meanDelta     Float   // signed minutes
+  stdDev        Float
+  minDelta      Int
+  maxDelta      Int
+  confidence    Float   // 0.0 – 1.0
+
+  // Whether this correction is active (>= MIN_OBSERVATIONS)
+  active        Boolean @default(false)
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([siteId, userId])
+  @@index([siteId])
+  @@index([userId])
+}
