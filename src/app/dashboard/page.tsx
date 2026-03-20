@@ -1,12 +1,14 @@
+import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
+  if (!session?.user?.id) redirect('/auth/signin')
   const [logCount, corrCount] = await Promise.all([
-    prisma.diveLog.count({ where: { userId: session!.user.id } }),
-    prisma.siteCorrection.count({ where: { userId: session!.user.id, active: true } }),
+    prisma.diveLog.count({ where: { userId: session.user.id as string } }),
+    prisma.siteCorrection.count({ where: { userId: session.user.id as string, active: true } }),
   ])
 
   const greeting = new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 17 ? 'Good afternoon' : 'Good evening'

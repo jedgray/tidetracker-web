@@ -1,9 +1,11 @@
+import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import DiveLogForm from './DiveLogForm'
 
 export default async function LogPage() {
   const session = await getServerSession(authOptions)
+  if (!session?.user?.id) redirect('/auth/signin')
   return (
     <div className="p-8 max-w-2xl">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Log a dive</h1>

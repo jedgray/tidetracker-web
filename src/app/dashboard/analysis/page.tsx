@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -5,7 +6,8 @@ import { getAllCorrections, MIN_OBSERVATIONS } from '@/lib/corrections'
 
 export default async function AnalysisPage() {
   const session = await getServerSession(authOptions)
-  const userId  = session!.user.id
+  if (!session?.user?.id) redirect('/auth/signin')
+  const userId = session.user.id as string
 
   const [corrections, logs] = await Promise.all([
     getAllCorrections(userId),
