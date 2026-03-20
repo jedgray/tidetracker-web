@@ -1,17 +1,17 @@
-export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getToken } from 'next-auth/jwt'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id) {
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
+  if (!token?.id) {
     return new NextResponse('Not authenticated', { status: 401 })
   }
 
   const logs = await prisma.diveLog.findMany({
-    where:   { userId: session.user.id },
+    where:   { userId: token.id as string },
     orderBy: { diveDate: 'desc' },
   })
 

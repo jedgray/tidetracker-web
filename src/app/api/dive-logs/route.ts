@@ -31,10 +31,10 @@ const createLogSchema = z.object({
 })
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-  }
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
+if (!token?.id) {
+  return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+}
 
   const { searchParams } = new URL(req.url)
   const siteId = searchParams.get('siteId')
