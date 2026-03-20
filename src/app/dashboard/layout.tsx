@@ -12,14 +12,18 @@ export default async function DashboardLayout({
   const session = await getServerSession(authOptions)
   if (!session) redirect('/auth/signin')
 
-  // Check disclaimer directly from DB — never rely on the JWT token
-  // for this since tokens are cached and may be stale
+  console.log('[layout] session.user.id:', session.user.id)
+  console.log('[layout] session.user:', JSON.stringify(session.user))
+
   const user = await prisma.user.findUnique({
     where:  { id: session.user.id },
-    select: { disclaimerAccepted: true },
+    select: { disclaimerAccepted: true, id: true, email: true },
   })
 
+  console.log('[layout] db user:', JSON.stringify(user))
+
   if (!user?.disclaimerAccepted) {
+    console.log('[layout] redirecting to onboarding — disclaimerAccepted is:', user?.disclaimerAccepted)
     redirect('/auth/onboarding')
   }
 
