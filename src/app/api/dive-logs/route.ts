@@ -1,8 +1,7 @@
+import { getToken } from 'next-auth/jwt'
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
 import { z } from 'zod'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { recomputeCorrection } from '@/lib/corrections'
 
@@ -45,7 +44,7 @@ export async function GET(req: NextRequest) {
   const [logs, total] = await Promise.all([
     prisma.diveLog.findMany({
       where: {
-        userId: session.user.id,
+        userId: token.id as string,
         ...(siteId ? { siteId } : {}),
       },
       orderBy: { diveDate: 'desc' },
@@ -54,7 +53,7 @@ export async function GET(req: NextRequest) {
     }),
     prisma.diveLog.count({
       where: {
-        userId: session.user.id,
+        userId: token.id as string,
         ...(siteId ? { siteId } : {}),
       },
     }),
@@ -64,13 +63,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-  }
-  if (!session.user.disclaimerAccepted) {
-    return NextResponse.json({ error: 'Disclaimer not accepted' }, { status: 403 })
-  }
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
+if (!token?.id) {
+  return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+}
 
   const body = await req.json()
   const parsed = createLogSchema.safeParse(body)
@@ -86,7 +82,7 @@ export async function POST(req: NextRequest) {
 
   const log = await prisma.diveLog.create({
     data: {
-      userId:               session.user.id,
+      userId:               token.id as string,
       siteId:               data.siteId,
       siteName:             data.siteName,
       region:               data.region,
@@ -117,7 +113,7 @@ export async function POST(req: NextRequest) {
       data.currStationId && data.tideStationId) {
     recomputeCorrection(
       data.siteId,
-      session.user.id,
+      token.id as string,
       data.currStationId,
       data.tideStationId,
     ).catch(console.error)
@@ -125,7 +121,7 @@ export async function POST(req: NextRequest) {
     // Also recompute community aggregate if user opted in and log is shared
     if (data.sharedWithCommunity) {
       const user = await prisma.user.findUnique({
-        where:  { id: session.user.id },
+        where:  { id: token.id as string },
         select: { shareLogsWithCommunity: true },
       })
       if (user?.shareLogsWithCommunity) {
