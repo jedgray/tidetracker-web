@@ -1,12 +1,12 @@
-export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getToken } from 'next-auth/jwt'
 import { getCorrection, getAllCorrections } from '@/lib/corrections'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id) {
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
+  if (!token?.id) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
 
@@ -14,10 +14,10 @@ export async function GET(req: NextRequest) {
   const siteId = searchParams.get('siteId')
 
   if (siteId) {
-    const correction = await getCorrection(siteId, session.user.id)
+    const correction = await getCorrection(siteId, token.id as string)
     return NextResponse.json({ correction })
   }
 
-  const corrections = await getAllCorrections(session.user.id)
+  const corrections = await getAllCorrections(token.id as string)
   return NextResponse.json({ corrections })
 }
