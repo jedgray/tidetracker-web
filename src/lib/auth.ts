@@ -60,37 +60,38 @@ export const authOptions: NextAuthOptions = {
     ] : []),
   ],
 
- callbacks: {
-  async jwt({ token, user, trigger }) {
-  if (user) token.id = user.id
-  // Always refresh user flags from DB so middleware sees current values
-  if (token.id) {
-    const dbUser = await prisma.user.findUnique({
-      where:  { id: token.id as string },
-      select: { disclaimerAccepted: true, unitHeight: true, unitVelocity: true },
-    })
-    if (dbUser) {
-      token.disclaimerAccepted = dbUser.disclaimerAccepted
-      token.unitHeight         = dbUser.unitHeight
-      token.unitVelocity       = dbUser.unitVelocity
-    }
-  }
-  return token
-},
-  async session({ session, token }) {
-    if (session.user) {
-      session.user.id                 = token.id as string
-      session.user.disclaimerAccepted = token.disclaimerAccepted as boolean ?? false
-      session.user.unitHeight         = token.unitHeight as string ?? 'ft'
-      session.user.unitVelocity       = token.unitVelocity as string ?? 'kt'
-    }
-    return session
+callbacks: {
+    async jwt({ token, user, trigger }) {
+      if (user) token.id = user.id
+      // Always refresh user flags from DB so middleware sees current values
+      if (token.id) {
+        const dbUser = await prisma.user.findUnique({
+          where:  { id: token.id as string },
+          select: { disclaimerAccepted: true, unitHeight: true, unitVelocity: true },
+        })
+        if (dbUser) {
+          token.disclaimerAccepted = dbUser.disclaimerAccepted
+          token.unitHeight         = dbUser.unitHeight
+          token.unitVelocity       = dbUser.unitVelocity
+        }
+      }
+      return token
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id                 = token.id as string
+        session.user.disclaimerAccepted = token.disclaimerAccepted as boolean ?? false
+        session.user.unitHeight         = token.unitHeight as string ?? 'ft'
+        session.user.unitVelocity       = token.unitVelocity as string ?? 'kt'
+      }
+      return session
+    },
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith('/')) return `${baseUrl}${url}`
+      if (url.startsWith(baseUrl)) return url
+      return baseUrl
+    },
   },
-  async redirect({ url, baseUrl }) {
-    if (url.startsWith('/')) return `${baseUrl}${url}`
-    if (url.startsWith(baseUrl)) return url
-    return baseUrl
-  },
-},
+}
 
 export default NextAuth(authOptions)
