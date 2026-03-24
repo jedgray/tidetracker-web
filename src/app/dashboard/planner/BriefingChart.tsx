@@ -163,8 +163,10 @@ export default function BriefingChart({
             tooltip: {
               callbacks: {
                 title: items => {
-                  const d = new Date(items[0].parsed.x)
-                  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+                 const x = items[0]?.parsed?.x
+                 if (x == null) return ''
+                 const d = new Date(x as number)
+                 return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
                 },
                 label: item => {
                   if (item.datasetIndex === 0) return `Tide: ${item.parsed.y.toFixed(unitHeight === 'm' ? 2 : 1)} ${unitHeight}`
