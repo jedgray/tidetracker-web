@@ -169,10 +169,11 @@ export default function BriefingChart({
                  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
                 },
                 label: item => {
-                  if (item.datasetIndex === 0) return `Tide: ${item.parsed.y.toFixed(unitHeight === 'm' ? 2 : 1)} ${unitHeight}`
-                  const v = item.parsed.y
-                  const dir = Math.abs(v) < 0.05 ? 'Slack' : v > 0 ? 'Flood' : 'Ebb'
-                  return `${dir}: ${Math.abs(v).toFixed(unitVelocity === 'm/s' ? 2 : 1)} ${unitVelocity}`
+                  const y = item.parsed?.y
+                  if (y == null) return ''
+                  if (item.datasetIndex === 0) return `Tide: ${y.toFixed(unitHeight === 'm' ? 2 : 1)} ${unitHeight}`
+                  const dir = Math.abs(y) < 0.05 ? 'Slack' : y > 0 ? 'Flood' : 'Ebb'
+                  return `${dir}: ${Math.abs(y).toFixed(unitVelocity === 'm/s' ? 2 : 1)} ${unitVelocity}`
                 },
               },
             },
