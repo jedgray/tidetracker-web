@@ -1,7 +1,10 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import type { PlanData, Window } from './PlannerClient'
 import type { CorrectionResult } from '@/lib/corrections'
+
+const BriefingChart = dynamic(() => import('./BriefingChart'), { ssr: false })
 
 const MIN_OBS = 10
 
@@ -169,6 +172,20 @@ export default function BriefingView({ planData, currName, tideName, onChangeDat
           <div className="text-sm text-gray-400 p-4 text-center card">No slack events found for this date.</div>
         )}
       </div>
+
+      {/* Chart */}
+      <BriefingChart
+        tideCurve={tideCurve.map((p: any) => ({ t: p.t as Date, v: p.v as number }))}
+        currCurve={currCurve.map((p: any) => ({ t: p.t as Date, v: p.v as number }))}
+        slackEvents={slackEvents.map((s: any) => ({ t: s.t as Date, type: s.type as string }))}
+        hiloEvents={hilo.map((h: any) => ({ t: h.t as Date, v: h.v as number, type: h.type as string }))}
+        correctedSlacks={windows
+          .filter(w => w.correctedTime !== null)
+          .map(w => w.correctedTime as Date)}
+        unitHeight={unitHeight}
+        unitVelocity={unitVelocity}
+        corrDelta={corrActive ? (correction?.meanDelta ?? null) : null}
+      />
 
       {/* Conditions summary */}
       <div>

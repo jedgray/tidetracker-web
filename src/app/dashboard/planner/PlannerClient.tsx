@@ -1,9 +1,20 @@
 'use client'
 
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import type { DiveSite } from '@prisma/client'
 import type { CorrectionResult } from '@/lib/corrections'
 import BriefingView from './BriefingView'
+
+// Leaflet must be loaded client-side only — no SSR
+const StationMap = dynamic(() => import('./StationMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="rounded-xl border border-gray-100 bg-gray-50 flex items-center justify-center" style={{ height: 480 }}>
+      <div className="text-sm text-gray-400">Loading map…</div>
+    </div>
+  ),
+})
 
 // ── Unit conversion ────────────────────────────────────────────────────────────
 const HEIGHT_CONV: Record<string, number> = { ft: 1, m: 0.3048 }
@@ -101,6 +112,7 @@ interface Props {
 
 export default function PlannerClient({ sites, corrections, unitHeight, unitVelocity }: Props) {
   const [step,      setStep]      = useState<1 | 2 | 3>(1)
+  const [siteView,  setSiteView]  = useState<'grid' | 'map'>('grid')
   const [selSite,   setSelSite]   = useState<DiveSite | null>(null)
   const [viewDate,  setViewDate]  = useState<Date>(() => { const d = new Date(); d.setHours(0,0,0,0); return d })
   const [planData,  setPlanData]  = useState<PlanData | null>(null)
@@ -252,21 +264,51 @@ export default function PlannerClient({ sites, corrections, unitHeight, unitVelo
       {/* ── Step 1: Site selector ── */}
       {step === 1 && (
         <div className="space-y-4">
-          <div className="flex gap-2 flex-wrap">
-            {regions.map(r => (
+          {/* Sites / Map tab switcher */}
+          <div className="flex gap-1 border-b border-gray-100">
+            {(['grid', 'map'] as const).map(v => (
               <button
-                key={r}
-                onClick={() => setRegionFilter(r)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
-                  regionFilter === r
-                    ? 'bg-tide-blue text-white border-tide-blue'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                key={v}
+                onClick={() => setSiteView(v)}
+                className={`px-4 py-2 text-xs font-semibold border-b-2 transition-colors ${
+                  siteView === v
+                    ? 'border-tide-blue text-tide-blue'
+                    : 'border-transparent text-gray-400 hover:text-gray-600'
                 }`}
               >
-                {r}
+                {v === 'grid' ? 'Sites' : 'Map'}
               </button>
             ))}
           </div>
+
+          {/* Map view */}
+          {siteView === 'map' && (
+            <StationMap
+              sites={sites}
+              corrections={corrections}
+              selectedId={selSite?.id ?? null}
+              onSelect={site => { setSelSite(site); setStep(2) }}
+            />
+          )}
+
+          {/* Grid view */}
+          {siteView === 'grid' && (
+            <>
+              <div className="flex gap-2 flex-wrap">
+                {regions.map(r => (
+                  <button
+                    key={r}
+                    onClick={() => setRegionFilter(r)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                      regionFilter === r
+                        ? 'bg-tide-blue text-white border-tide-blue'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {sites
               .filter(s => regionFilter === 'All' || s.region === regionFilter)
@@ -318,7 +360,9 @@ export default function PlannerClient({ sites, corrections, unitHeight, unitVelo
                   </button>
                 )
               })}
-          </div>
+              </div>
+            </>
+          )}
         </div>
       )}
 
