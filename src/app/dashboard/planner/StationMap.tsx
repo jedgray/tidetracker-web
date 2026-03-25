@@ -53,39 +53,41 @@ export default function StationMap({ sites, corrections, selectedId, onSelect }:
     return '#0a6bbd' // all sites use blue — they are dive sites not raw stations
   }
 
-  useEffect(() => {
+useEffect(() => {
+  if (!mapRef.current || mapInst.current) return
+
+  import('leaflet').then(async (L) => {
+    // Load markercluster as a side-effect after L is available
+    // It patches L.markerClusterGroup onto the Leaflet instance
+    await import('leaflet.markercluster')
+
     if (!mapRef.current || mapInst.current) return
 
-    // Dynamically import Leaflet to avoid SSR issues
-    Promise.all([
-      import('leaflet'),
-      import('leaflet.markercluster'),
-    ]).then(([L]) => {
-      const map = L.map(mapRef.current!, { center: [47.95, -122.7], zoom: 8 })
-      mapInst.current = map
+    const map = L.map(mapRef.current!, { center: [47.95, -122.7], zoom: 8 })
+    mapInst.current = map
 
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains:  'abcd',
-        maxZoom:     19,
-      }).addTo(map)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains:  'abcd',
+      maxZoom:     19,
+    }).addTo(map)
 
-      const cluster = (L as any).markerClusterGroup({
-        maxClusterRadius: 55,
-        showCoverageOnHover: false,
-        zoomToBoundsOnClick: true,
-        spiderfyOnMaxZoom: true,
-        iconCreateFunction: (c: any) => {
-          const total = c.getChildCount()
-          const sz    = total >= 10 ? 44 : total >= 4 ? 36 : 28
-          return L.divIcon({
-            html: `<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:#4a7fb5;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:${sz >= 36 ? 12 : 10}px;color:#fff;border:2px solid rgba(255,255,255,0.85)">${total}</div>`,
-            className: '',
-            iconSize: [sz, sz],
-          })
-        },
-      })
-      clusterRef.current = cluster
+    const cluster = (L as any).markerClusterGroup({
+      maxClusterRadius:    55,
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+      spiderfyOnMaxZoom:   true,
+      iconCreateFunction:  (c: any) => {
+        const total = c.getChildCount()
+        const sz    = total >= 10 ? 44 : total >= 4 ? 36 : 28
+        return L.divIcon({
+          html:      `<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:#4a7fb5;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:${sz >= 36 ? 12 : 10}px;color:#fff;border:2px solid rgba(255,255,255,0.85)">${total}</div>`,
+          className: '',
+          iconSize:  [sz, sz],
+        })
+      },
+    })
+    clusterRef.current = cluster
 
       sites.forEach(site => {
         const color   = siteColor(site)
