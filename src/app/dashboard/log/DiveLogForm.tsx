@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 const SITES = [
   { id: 'edmonds',   name: 'Edmonds Underwater Park', currStationId: 'PUG1503', currStationName: 'Agate Passage',    tideStationId: '9447214', tideStationName: 'Shilshole Bay' },
   { id: 'mukilteo',  name: 'Mukilteo T-Dock',         currStationId: 'PUG1503', currStationName: 'Agate Passage',    tideStationId: '9447359', tideStationName: 'Everett'       },
-  { id: 'keystone',  name: 'Keystone Jetty',          currStationId: 'PCT1516', currStationName: 'Admiralty Inlet',  tideStationId: '9447110', tideStationName: 'Port Townsend' },
+  { id: 'keystone',  name: 'Keystone Jetty',          currStationId: 'PUG1620', currStationName: 'Marrowstone Point', tideStationId: '9447110', tideStationName: 'Port Townsend' },
   { id: 'alki2',     name: 'Alki Cove 2',             currStationId: 'PUG1501', currStationName: 'Rich Passage',     tideStationId: '9447130', tideStationName: 'Seattle'       },
   { id: 'alkijunk',  name: 'Alki Junkyard',           currStationId: 'PUG1501', currStationName: 'Rich Passage',     tideStationId: '9447130', tideStationName: 'Seattle'       },
   { id: 'threetree', name: 'Three Tree Point',        currStationId: 'PUG1501', currStationName: 'Rich Passage',     tideStationId: '9447130', tideStationName: 'Seattle'       },
@@ -16,8 +16,8 @@ const SITES = [
   { id: 'sunrise',   name: 'Sunrise Beach',           currStationId: 'PUG1511', currStationName: 'Colvos Passage',   tideStationId: '9446807', tideStationName: 'Tacoma'        },
   { id: 'dayisland', name: 'Day Island Wall',         currStationId: 'PUG1515', currStationName: 'The Narrows',      tideStationId: '9446807', tideStationName: 'Tacoma'        },
   { id: 'foxisland', name: 'Fox Island Wall',         currStationId: 'PUG1511', currStationName: 'Colvos Passage',   tideStationId: '9446807', tideStationName: 'Tacoma'        },
-  { id: 'saltcreek', name: 'Salt Creek',              currStationId: 'PCT1516', currStationName: 'Admiralty Inlet',  tideStationId: '9443090', tideStationName: 'Neah Bay'      },
-  { id: 'sekiu',     name: 'Sekiu',                   currStationId: 'PCT1516', currStationName: 'Admiralty Inlet',  tideStationId: '9443090', tideStationName: 'Neah Bay'      },
+  { id: 'saltcreek', name: 'Salt Creek',              currStationId: 'PUG1641', currStationName: 'PUG1641',          tideStationId: '9443090', tideStationName: 'Neah Bay'      },
+  { id: 'sekiu',     name: 'Sekiu',                   currStationId: 'PUG1642', currStationName: 'Strait of JdF',    tideStationId: '9443090', tideStationName: 'Neah Bay'      },
 ]
 
 const CURR_STRENGTH = ['None', 'Mild', 'Moderate', 'Strong', 'Dangerous']

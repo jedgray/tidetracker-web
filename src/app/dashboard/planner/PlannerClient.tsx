@@ -126,7 +126,8 @@ export default function PlannerClient({ sites, corrections, unitHeight, unitVelo
   const CURR_NAMES: Record<string, string> = {
     PUG1515: 'The Narrows', PCT1516: 'Admiralty Inlet', PUG1501: 'Rich Passage',
     PUG1511: 'Colvos Passage', PUG1503: 'Agate Passage', ACT4176: 'Deception Pass',
-    PCT1531: 'Port Townsend Canal',
+    PCT1531: 'Port Townsend Canal', PUG1620: 'Marrowstone Point',
+    PUG1641: 'Salt Creek', PUG1642: 'Strait of Juan de Fuca',
   }
   const TIDE_NAMES: Record<string, string> = {
     '9447130': 'Seattle', '9447110': 'Port Townsend', '9447214': 'Shilshole Bay',
