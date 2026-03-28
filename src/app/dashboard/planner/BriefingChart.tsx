@@ -7,14 +7,15 @@ interface SlackEvent { t: Date; type: string }
 interface HiloEvent  { t: Date; v: number; type: string }
 
 interface Props {
-  tideCurve:       DataPoint[]
-  currCurve:       DataPoint[]
-  slackEvents:     SlackEvent[]
-  hiloEvents:      HiloEvent[]
-  correctedSlacks: Date[]
-  unitHeight:      string
-  unitVelocity:    string
-  corrDelta:       number | null
+  tideCurve:          DataPoint[]
+  currCurve:          DataPoint[]
+  slackEvents:        SlackEvent[]
+  hiloEvents:         HiloEvent[]
+  correctedSlacks:    Date[]
+  unitHeight:         string
+  unitVelocity:       string
+  corrDelta:          number | null
+  currCurveAvailable: boolean
 }
 
 const HEIGHT_CONV: Record<string, number> = { ft: 1, m: 0.3048 }
@@ -44,7 +45,7 @@ interface CrosshairState {
 
 export default function BriefingChart({
   tideCurve, currCurve, slackEvents, hiloEvents,
-  correctedSlacks, unitHeight, unitVelocity, corrDelta,
+  correctedSlacks, unitHeight, unitVelocity, corrDelta, currCurveAvailable,
 }: Props) {
   const canvasRef     = useRef<HTMLCanvasElement>(null)
   const wrapRef       = useRef<HTMLDivElement>(null)
@@ -332,9 +333,11 @@ export default function BriefingChart({
           <div className="flex items-center gap-1 text-xs text-gray-500">
             <div className="w-3 h-0.5 bg-tide-blue rounded" />Tide
           </div>
-          <div className="flex items-center gap-1 text-xs text-gray-500">
-            <div className="w-3 h-0.5 bg-tide-teal rounded" />Current
-          </div>
+          {currCurveAvailable && (
+            <div className="flex items-center gap-1 text-xs text-gray-500">
+              <div className="w-3 h-0.5 bg-tide-teal rounded" />Current
+            </div>
+          )}
           <div className="flex items-center gap-1 text-xs text-gray-500">
             <div className="w-3 h-0.5 bg-tide-slack rounded" />S
           </div>
@@ -388,7 +391,16 @@ export default function BriefingChart({
           Correction Δ{corrDelta > 0 ? '+' : ''}{corrDelta}m applied · C = corrected slack
         </div>
       )}
-      <div className="text-xs text-gray-400 mt-0.5">
+      {!currCurveAvailable && (
+        <div className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mt-2 flex items-start gap-2">
+          <span className="flex-shrink-0">⚠</span>
+          <span>
+            Current velocity curve unavailable — this site uses a subordinate current station which only provides slack and max times, not a continuous prediction.
+            Slack event lines (S) are still accurate. Tide height curve is shown for context.
+          </span>
+        </div>
+      )}
+      <div className="text-xs text-gray-400 mt-1">
         <span className="text-gray-300">Hover or tap chart</span> to see tide &amp; current at any time · S = slack
       </div>
     </div>

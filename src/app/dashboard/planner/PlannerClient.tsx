@@ -70,21 +70,22 @@ function applyCorrection(t: Date, delta: number) {
 }
 
 export interface PlanData {
-  site:         DiveSite
-  date:         Date
-  correction:   CorrectionResult | null
-  hilo:         any[]
-  slack:        any[]
-  tideCurve:    any[]
-  currCurve:    any[]
-  dayRating:    'good' | 'marginal' | 'poor'
-  maxFlood:     number
-  maxEbb:       number
-  tRange:       number
-  slackEvents:  any[]
-  windows:      Window[]
-  unitHeight:   string
-  unitVelocity: string
+  site:              DiveSite
+  date:              Date
+  correction:        CorrectionResult | null
+  hilo:              any[]
+  slack:             any[]
+  tideCurve:         any[]
+  currCurve:         any[]
+  currCurveAvailable: boolean  // false for subordinate stations
+  dayRating:         'good' | 'marginal' | 'poor'
+  maxFlood:          number
+  maxEbb:            number
+  tRange:            number
+  slackEvents:       any[]
+  windows:           Window[]
+  unitHeight:        string
+  unitVelocity:      string
 }
 
 export interface Window {
@@ -151,6 +152,7 @@ export default function PlannerClient({ sites, corrections, unitHeight, unitVelo
 
       if (hiloR.error)  throw new Error(`Tide (${selSite.tideStationId}): ${hiloR.error.message}`)
       if (slackR.error) throw new Error(`Current (${selSite.currStationId}): ${slackR.error.message}`)
+      // Note: currCurveR may error for subordinate stations — handled gracefully below
 
       const hilo = (hiloR.predictions || [])
         .filter((p: any) => getTimeField(p))
@@ -168,7 +170,10 @@ export default function PlannerClient({ sites, corrections, unitHeight, unitVelo
         .map((p: any) => ({ t: parseT(getTimeField(p)), v: parseFloat(p.v) || 0 }))
         .filter((p: any) => p.t)
 
-      const ccRaw = currCurveR.current_predictions?.cp || currCurveR.predictions || currCurveR.current_predictions || []
+      // Subordinate stations only serve MAX_SLACK — 6-min curve will be empty or error
+      const ccRaw = (!currCurveR.error)
+        ? (currCurveR.current_predictions?.cp || currCurveR.predictions || currCurveR.current_predictions || [])
+        : []
       const currCurve = (Array.isArray(ccRaw) ? ccRaw : [])
         .filter((p: any) => getTimeField(p))
         .map((p: any) => {
@@ -177,6 +182,8 @@ export default function PlannerClient({ sites, corrections, unitHeight, unitVelo
           return { t: parseT(getTimeField(p)), v: type === 'ebb' ? -v : v, absV: v, type }
         })
         .filter((p: any) => p.t)
+
+      const currCurveAvailable = currCurve.length > 0
 
       const corr       = corrections[selSite.id] ?? null
       const corrActive = corr?.active && corr.n >= MIN_OBS
@@ -220,7 +227,7 @@ export default function PlannerClient({ sites, corrections, unitHeight, unitVelo
       const maxEbb    = ebbs.length   ? Math.max(...ebbs.map((p: any)   => Math.abs(p.v))): 0
       const tRange    = hilo.length   ? Math.max(...hilo.map((p: any) => p.v)) - Math.min(...hilo.map((p: any) => p.v)) : 0
 
-      setPlanData({ site: selSite, date: viewDate, correction: corr, hilo, slack, tideCurve, currCurve, dayRating: dayRating as any, maxFlood, maxEbb, tRange, slackEvents, windows, unitHeight, unitVelocity })
+      setPlanData({ site: selSite, date: viewDate, correction: corr, hilo, slack, tideCurve, currCurve, currCurveAvailable, dayRating: dayRating as any, maxFlood, maxEbb, tRange, slackEvents, windows, unitHeight, unitVelocity })
       setStep(3)
     } catch (e: any) {
       setError(e.message)
