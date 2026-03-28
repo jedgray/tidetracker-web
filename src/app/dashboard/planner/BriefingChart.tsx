@@ -95,6 +95,11 @@ export default function BriefingChart({
   }
 
   useEffect(() => {
+    console.log('[BriefingChart] useEffect fired' , {
+      tideCurveLen: tideCurve.length,
+      currCurvelen: currCurve.length,
+      canvasReady: !!canvasRef.current
+    })
     if (!canvasRef.current || !tideCurve.length) return
 
     import('chart.js').then(({ Chart, registerables }) => {
