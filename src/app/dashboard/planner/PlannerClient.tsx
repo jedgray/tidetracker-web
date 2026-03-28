@@ -229,12 +229,12 @@ export default function PlannerClient({ sites, corrections, unitHeight, unitVelo
   }
 
   // ── Step indicators ──────────────────────────────────────────────────────────
-  const steps = ['Dive site', 'Date', 'Briefing']
+  const steps = ['Site', 'Date', 'Briefing']
 
   return (
     <div className="max-w-4xl">
       {/* Step header */}
-      <div className="flex border border-gray-100 rounded-xl overflow-hidden mb-6 bg-gray-50">
+      <div className="flex border border-gray-100 rounded-xl overflow-hidden mb-5 bg-gray-50">
         {steps.map((label, i) => {
           const n    = i + 1
           const active = step === n
@@ -244,7 +244,7 @@ export default function PlannerClient({ sites, corrections, unitHeight, unitVelo
               key={n}
               onClick={() => { if (done) setStep(n as 1|2|3) }}
               disabled={!done && !active}
-              className={`flex-1 flex items-center gap-2 px-4 py-3 text-xs font-semibold border-r last:border-r-0 border-gray-100 transition-colors ${
+              className={`flex-1 flex items-center gap-2 px-3 py-2.5 text-xs font-semibold border-r last:border-r-0 border-gray-100 transition-colors ${
                 active ? 'bg-white text-gray-900' :
                 done   ? 'text-tide-slack cursor-pointer hover:bg-tide-slack-lt' :
                          'text-gray-400 cursor-default'

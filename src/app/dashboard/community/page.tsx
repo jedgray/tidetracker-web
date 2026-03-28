@@ -1,5 +1,3 @@
-export const dynamic = 'force-dynamic'
-import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -7,9 +5,8 @@ import CommunityToggle from './CommunityToggle'
 
 export default async function CommunityPage() {
   const session = await getServerSession(authOptions)
-  if (!session?.user?.id) redirect('/auth/signin')
   const user = await prisma.user.findUnique({
-    where:  { id: session.user.id as string },
+    where:  { id: session!.user.id },
     select: { shareLogsWithCommunity: true },
   })
 
@@ -20,7 +17,7 @@ export default async function CommunityPage() {
   })
 
   return (
-    <div className="p-8 max-w-2xl">
+    <div className="p-4 md:p-8 max-w-2xl">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Community</h1>
       <p className="text-gray-500 mb-8">Help improve slack predictions for everyone by sharing your observations.</p>
 

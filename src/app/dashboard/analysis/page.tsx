@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -6,8 +5,7 @@ import { getAllCorrections, MIN_OBSERVATIONS } from '@/lib/corrections'
 
 export default async function AnalysisPage() {
   const session = await getServerSession(authOptions)
-  if (!session?.user?.id) redirect('/auth/signin')
-  const userId = session.user.id as string
+  const userId  = session!.user.id
 
   const [corrections, logs] = await Promise.all([
     getAllCorrections(userId),
@@ -50,7 +48,7 @@ export default async function AnalysisPage() {
   }
 
   return (
-    <div className="p-8 max-w-3xl">
+    <div className="p-4 md:p-8 max-w-3xl">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Slack analysis</h1>
       <p className="text-gray-500 mb-8">
         Built from {totalLogs} logged dive{totalLogs !== 1 ? 's' : ''},

@@ -167,12 +167,14 @@ export default function DiveLogForm({
         <div className="section-head">Slack water observation</div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="label">Planned slack (from prediction)</label>
+            <label className="label">Planned slack</label>
             <input className="input" type="time" value={plannedSlack} onChange={e => setPlannedSlack(e.target.value)} />
+            <div className="text-xs text-gray-400 mt-1">From prediction</div>
           </div>
           <div>
-            <label className="label">Observed slack (actual)</label>
+            <label className="label">Observed slack</label>
             <input className="input" type="time" value={observedSlack} onChange={e => setObservedSlack(e.target.value)} />
+            <div className="text-xs text-gray-400 mt-1">What you saw</div>
           </div>
         </div>
         {dd && (

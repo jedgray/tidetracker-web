@@ -163,17 +163,14 @@ export default function BriefingChart({
             tooltip: {
               callbacks: {
                 title: items => {
-                 const x = items[0]?.parsed?.x
-                 if (x == null) return ''
-                 const d = new Date(x as number)
-                 return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+                  const d = new Date(items[0].parsed.x)
+                  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
                 },
                 label: item => {
-                  const y = item.parsed?.y
-                  if (y == null) return ''
-                  if (item.datasetIndex === 0) return `Tide: ${y.toFixed(unitHeight === 'm' ? 2 : 1)} ${unitHeight}`
-                  const dir = Math.abs(y) < 0.05 ? 'Slack' : y > 0 ? 'Flood' : 'Ebb'
-                  return `${dir}: ${Math.abs(y).toFixed(unitVelocity === 'm/s' ? 2 : 1)} ${unitVelocity}`
+                  if (item.datasetIndex === 0) return `Tide: ${item.parsed.y.toFixed(unitHeight === 'm' ? 2 : 1)} ${unitHeight}`
+                  const v = item.parsed.y
+                  const dir = Math.abs(v) < 0.05 ? 'Slack' : v > 0 ? 'Flood' : 'Ebb'
+                  return `${dir}: ${Math.abs(v).toFixed(unitVelocity === 'm/s' ? 2 : 1)} ${unitVelocity}`
                 },
               },
             },
@@ -243,25 +240,25 @@ export default function BriefingChart({
 
   return (
     <div className="card p-4">
-      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Tide &amp; current overlay</div>
-        <div className="flex gap-4">
-          <div className="flex items-center gap-1.5 text-xs text-gray-500">
-            <div className="w-4 h-0.5 bg-tide-blue" />
-            Tide height
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Tide &amp; current</div>
+        <div className="flex gap-3 flex-wrap justify-end">
+          <div className="flex items-center gap-1 text-xs text-gray-500">
+            <div className="w-3 h-0.5 bg-tide-blue rounded" />
+            Tide
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-gray-500">
-            <div className="w-4 h-0.5 bg-tide-teal border-dashed border-t border-tide-teal" />
-            Current velocity
+          <div className="flex items-center gap-1 text-xs text-gray-500">
+            <div className="w-3 h-0.5 bg-tide-teal rounded" style={{ borderTop: '1px dashed' }} />
+            Current
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-gray-500">
-            <div className="w-4 h-0.5 bg-tide-slack" />
-            Slack (S)
+          <div className="flex items-center gap-1 text-xs text-gray-500">
+            <div className="w-3 h-0.5 bg-tide-slack rounded" />
+            S
           </div>
           {correctedSlacks.length > 0 && (
-            <div className="flex items-center gap-1.5 text-xs text-gray-500">
-              <div className="w-4 h-0.5 bg-tide-amber border-dashed border-t border-tide-amber" />
-              Corrected (C)
+            <div className="flex items-center gap-1 text-xs text-gray-500">
+              <div className="w-3 h-0.5 bg-tide-amber rounded" />
+              C
             </div>
           )}
         </div>
