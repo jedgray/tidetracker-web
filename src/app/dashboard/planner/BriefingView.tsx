@@ -175,6 +175,7 @@ export default function BriefingView({ planData, currName, tideName, onChangeDat
 
       {/* Chart */}
       <BriefingChart
+        key={`${site.id}-${date.toISOString()}`}
         tideCurve={tideCurve.map((p: any) => ({ t: p.t as Date, v: p.v as number }))}
         currCurve={currCurve.map((p: any) => ({ t: p.t as Date, v: p.v as number }))}
         slackEvents={slackEvents.map((s: any) => ({ t: s.t as Date, type: s.type as string }))}
