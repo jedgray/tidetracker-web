@@ -24,6 +24,29 @@ function computeConfidence(n: number, stdDev: number): number {
   return parseFloat((0.4 + sizeFactor * 0.4 + spreadFactor * 0.2).toFixed(3))
 }
 
+// Outlier filtering — IQR method.
+// Removes entries beyond 1.5 × IQR from Q1/Q3 before computing mean.
+// Only applied when n >= 6 so small samples aren't over-filtered.
+// Filtered outliers are counted separately and stored for transparency.
+function filterOutliers(deltas: number[]): { clean: number[]; outliers: number[] } {
+  if (deltas.length < 6) return { clean: deltas, outliers: [] }
+
+  const sorted  = [...deltas].sort((a, b) => a - b)
+  const q1      = sorted[Math.floor(sorted.length * 0.25)]
+  const q3      = sorted[Math.floor(sorted.length * 0.75)]
+  const iqr     = q3 - q1
+
+  // Fallback: if IQR is 0 (all values identical), skip filtering
+  if (iqr === 0) return { clean: deltas, outliers: [] }
+
+  const lo = q1 - 1.5 * iqr
+  const hi = q3 + 1.5 * iqr
+
+  const clean    = deltas.filter(d => d >= lo && d <= hi)
+  const outliers = deltas.filter(d => d < lo  || d > hi)
+  return { clean, outliers }
+}
+
 // Recompute and upsert a SiteCorrection row from raw DiveLog data.
 // Called after every new log save.
 export async function recomputeCorrection(
@@ -61,9 +84,14 @@ export async function recomputeCorrection(
     return
   }
 
-  const mean    = deltas.reduce((a, b) => a + b, 0) / n
-  const variance = deltas.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / n
-  const stdDev  = Math.sqrt(variance)
+  // Filter outliers before computing mean — keeps bad entries from skewing corrections.
+  // Raw n is preserved so the user can see how many total observations exist.
+  const { clean, outliers } = filterOutliers(deltas)
+  const workingDeltas = clean.length >= MIN_OBSERVATIONS ? clean : deltas
+
+  const mean     = workingDeltas.reduce((a, b) => a + b, 0) / workingDeltas.length
+  const variance = workingDeltas.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / workingDeltas.length
+  const stdDev   = Math.sqrt(variance)
 
   await prisma.siteCorrection.upsert({
     where:  { siteId_userId: { siteId, userId: userId ?? '' } },
