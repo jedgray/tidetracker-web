@@ -7,15 +7,16 @@ interface SlackEvent { t: Date; type: string }
 interface HiloEvent  { t: Date; v: number; type: string }
 
 interface Props {
-  tideCurve:          DataPoint[]
-  currCurve:          DataPoint[]
-  slackEvents:        SlackEvent[]
-  hiloEvents:         HiloEvent[]
-  correctedSlacks:    Date[]
-  unitHeight:         string
-  unitVelocity:       string
-  corrDelta:          number | null
-  currCurveAvailable: boolean
+  tideCurve:            DataPoint[]
+  currCurve:            DataPoint[]
+  slackEvents:          SlackEvent[]
+  hiloEvents:           HiloEvent[]
+  correctedSlacks:      Date[]
+  unitHeight:           string
+  unitVelocity:         string
+  corrDelta:            number | null
+  currCurveAvailable:   boolean
+  tideCurveFromSeattle: boolean
 }
 
 const HEIGHT_CONV: Record<string, number> = { ft: 1, m: 0.3048 }
@@ -45,7 +46,7 @@ interface CrosshairState {
 
 export default function BriefingChart({
   tideCurve, currCurve, slackEvents, hiloEvents,
-  correctedSlacks, unitHeight, unitVelocity, corrDelta, currCurveAvailable,
+  correctedSlacks, unitHeight, unitVelocity, corrDelta, currCurveAvailable, tideCurveFromSeattle,
 }: Props) {
   const canvasRef     = useRef<HTMLCanvasElement>(null)
   const wrapRef       = useRef<HTMLDivElement>(null)
@@ -95,11 +96,6 @@ export default function BriefingChart({
   }
 
   useEffect(() => {
-    console.log('[BriefingChart] useEffect fired' , {
-      tideCurveLen: tideCurve.length,
-      currCurvelen: currCurve.length,
-      canvasReady: !!canvasRef.current
-    })
     if (!canvasRef.current || !tideCurve.length) return
 
     import('chart.js').then(({ Chart, registerables }) => {
@@ -329,30 +325,74 @@ export default function BriefingChart({
     return { time, tideStr, dir, dirColor, currStr }
   }
 
+  const [showTideNote, setShowTideNote] = useState(false)
+  const [showCurrNote, setShowCurrNote] = useState(false)
+
   return (
     <div className="card p-4">
-      {/* Header + legend */}
+      {/* Header + legend + notice badges */}
       <div className="flex items-center justify-between mb-3">
         <div className="text-xs font-bold uppercase tracking-wider text-gray-400">Tide &amp; current</div>
-        <div className="flex gap-3 flex-wrap justify-end">
-          <div className="flex items-center gap-1 text-xs text-gray-500">
-            <div className="w-3 h-0.5 bg-tide-blue rounded" />Tide
-          </div>
-          {currCurveAvailable && (
+        <div className="flex items-center gap-3 flex-wrap justify-end">
+          <div className="flex gap-3 flex-wrap">
             <div className="flex items-center gap-1 text-xs text-gray-500">
-              <div className="w-3 h-0.5 bg-tide-teal rounded" />Current
+              <div className="w-3 h-0.5 bg-tide-blue rounded" />Tide
             </div>
-          )}
-          <div className="flex items-center gap-1 text-xs text-gray-500">
-            <div className="w-3 h-0.5 bg-tide-slack rounded" />S
-          </div>
-          {correctedSlacks.length > 0 && (
+            {currCurveAvailable && (
+              <div className="flex items-center gap-1 text-xs text-gray-500">
+                <div className="w-3 h-0.5 bg-tide-teal rounded" />Current
+              </div>
+            )}
             <div className="flex items-center gap-1 text-xs text-gray-500">
-              <div className="w-3 h-0.5 bg-tide-amber rounded" />C
+              <div className="w-3 h-0.5 bg-tide-slack rounded" />S
             </div>
-          )}
+            {correctedSlacks.length > 0 && (
+              <div className="flex items-center gap-1 text-xs text-gray-500">
+                <div className="w-3 h-0.5 bg-tide-amber rounded" />C
+              </div>
+            )}
+          </div>
+          {/* Notice badges — only shown when relevant */}
+          <div className="flex items-center gap-1.5">
+            {tideCurveFromSeattle && (
+              <button
+                onClick={() => { setShowTideNote(v => !v); setShowCurrNote(false) }}
+                className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center hover:bg-blue-200 transition-colors flex-shrink-0"
+                title="Tide data note"
+              >i</button>
+            )}
+            {!currCurveAvailable && (
+              <button
+                onClick={() => { setShowCurrNote(v => !v); setShowTideNote(false) }}
+                className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold flex items-center justify-center hover:bg-amber-200 transition-colors flex-shrink-0"
+                title="Current data note"
+              >!</button>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Expandable notices — shown below header when toggled */}
+      {showTideNote && (
+        <div className="mb-3 rounded-lg bg-blue-50 border border-blue-100 px-3 py-2 text-xs text-blue-800 flex items-start gap-2">
+          <span className="flex-shrink-0 font-bold">i</span>
+          <span className="flex-1">
+            Tide height curve uses Seattle station data for chart display.
+            High/low tide times shown in the dive windows are from the site's assigned station and are accurate for this location.
+          </span>
+          <button onClick={() => setShowTideNote(false)} className="flex-shrink-0 text-blue-400 hover:text-blue-700 font-bold leading-none ml-1">×</button>
+        </div>
+      )}
+      {showCurrNote && (
+        <div className="mb-3 rounded-lg bg-amber-50 border border-amber-100 px-3 py-2 text-xs text-amber-800 flex items-start gap-2">
+          <span className="flex-shrink-0 font-bold">!</span>
+          <span className="flex-1">
+            Current velocity curve unavailable — this site uses a subordinate current station which only provides slack and max times, not a continuous curve.
+            Slack event lines (S) are still accurate.
+          </span>
+          <button onClick={() => setShowCurrNote(false)} className="flex-shrink-0 text-amber-400 hover:text-amber-700 font-bold leading-none ml-1">×</button>
+        </div>
+      )}
 
       {/* Chart + floating tooltip overlay */}
       <div ref={wrapRef} className="relative select-none" style={{ height: '220px' }}>
@@ -390,23 +430,14 @@ export default function BriefingChart({
         })()}
       </div>
 
-      {/* Footer notes */}
+      {/* Footer */}
       {corrDelta !== null && correctedSlacks.length > 0 && (
         <div className="text-xs text-gray-400 text-right mt-2">
           Correction Δ{corrDelta > 0 ? '+' : ''}{corrDelta}m applied · C = corrected slack
         </div>
       )}
-      {!currCurveAvailable && (
-        <div className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mt-2 flex items-start gap-2">
-          <span className="flex-shrink-0">⚠</span>
-          <span>
-            Current velocity curve unavailable — this site uses a subordinate current station which only provides slack and max times, not a continuous prediction.
-            Slack event lines (S) are still accurate. Tide height curve is shown for context.
-          </span>
-        </div>
-      )}
       <div className="text-xs text-gray-400 mt-1">
-        <span className="text-gray-300">Hover or tap chart</span> to see tide &amp; current at any time · S = slack
+        <span className="text-gray-300">Hover or tap chart</span> to see tide &amp; current · S = slack
       </div>
     </div>
   )

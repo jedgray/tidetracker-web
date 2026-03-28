@@ -70,22 +70,23 @@ function applyCorrection(t: Date, delta: number) {
 }
 
 export interface PlanData {
-  site:              DiveSite
-  date:              Date
-  correction:        CorrectionResult | null
-  hilo:              any[]
-  slack:             any[]
-  tideCurve:         any[]
-  currCurve:         any[]
-  currCurveAvailable: boolean  // false for subordinate stations
-  dayRating:         'good' | 'marginal' | 'poor'
-  maxFlood:          number
-  maxEbb:            number
-  tRange:            number
-  slackEvents:       any[]
-  windows:           Window[]
-  unitHeight:        string
-  unitVelocity:      string
+  site:                 DiveSite
+  date:                 Date
+  correction:           CorrectionResult | null
+  hilo:                 any[]
+  slack:                any[]
+  tideCurve:            any[]
+  currCurve:            any[]
+  currCurveAvailable:   boolean
+  tideCurveFromSeattle: boolean  // true when site station doesn't serve 6-min data
+  dayRating:            'good' | 'marginal' | 'poor'
+  maxFlood:             number
+  maxEbb:               number
+  tRange:               number
+  slackEvents:          any[]
+  windows:              Window[]
+  unitHeight:           string
+  unitVelocity:         string
 }
 
 export interface Window {
@@ -137,16 +138,23 @@ export default function PlannerClient({ sites, corrections, unitHeight, unitVelo
   }
 
   // ── Fetch predictions ────────────────────────────────────────────────────────
+  // Seattle (9447130) always serves reliable 6-minute tide curve data.
+  // We use it for the chart curve on all sites. The site's own tide station
+  // is used for hilo (accurate high/low times) and lag calculations.
+  const SEATTLE_TIDE = '9447130'
+
   async function fetchPlan() {
     if (!selSite) return
     setLoading(true)
     setError(null)
     const d = fmtAPI(viewDate)
+    const tideCurveStation = SEATTLE_TIDE
+    const tideCurveFromSeattle = selSite.tideStationId !== SEATTLE_TIDE
     try {
       const [hiloR, slackR, tideCurveR, currCurveR] = await Promise.all([
         fetch(`${NOAA}?begin_date=${d}&end_date=${d}&station=${selSite.tideStationId}&product=predictions&datum=MLLW&time_zone=lst_ldt&interval=hilo&units=english&application=tide_tracker&format=json`).then(r => r.json()),
         fetch(`${NOAA}?begin_date=${d}&end_date=${d}&station=${selSite.currStationId}&product=currents_predictions&time_zone=lst_ldt&interval=MAX_SLACK&units=english&application=tide_tracker&format=json`).then(r => r.json()),
-        fetch(`${NOAA}?begin_date=${d}&end_date=${d}&station=${selSite.tideStationId}&product=predictions&datum=MLLW&time_zone=lst_ldt&interval=6&units=english&application=tide_tracker&format=json`).then(r => r.json()),
+        fetch(`${NOAA}?begin_date=${d}&end_date=${d}&station=${tideCurveStation}&product=predictions&datum=MLLW&time_zone=lst_ldt&interval=6&units=english&application=tide_tracker&format=json`).then(r => r.json()),
         fetch(`${NOAA}?begin_date=${d}&end_date=${d}&station=${selSite.currStationId}&product=currents_predictions&time_zone=lst_ldt&interval=6&units=english&application=tide_tracker&format=json`).then(r => r.json()),
       ])
 
@@ -227,7 +235,7 @@ export default function PlannerClient({ sites, corrections, unitHeight, unitVelo
       const maxEbb    = ebbs.length   ? Math.max(...ebbs.map((p: any)   => Math.abs(p.v))): 0
       const tRange    = hilo.length   ? Math.max(...hilo.map((p: any) => p.v)) - Math.min(...hilo.map((p: any) => p.v)) : 0
 
-      setPlanData({ site: selSite, date: viewDate, correction: corr, hilo, slack, tideCurve, currCurve, currCurveAvailable, dayRating: dayRating as any, maxFlood, maxEbb, tRange, slackEvents, windows, unitHeight, unitVelocity })
+      setPlanData({ site: selSite, date: viewDate, correction: corr, hilo, slack, tideCurve, currCurve, currCurveAvailable, tideCurveFromSeattle, dayRating: dayRating as any, maxFlood, maxEbb, tRange, slackEvents, windows, unitHeight, unitVelocity })
       setStep(3)
     } catch (e: any) {
       setError(e.message)

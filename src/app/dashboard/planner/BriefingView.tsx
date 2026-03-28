@@ -46,7 +46,7 @@ interface Props {
 }
 
 export default function BriefingView({ planData, currName, tideName, onChangeDate, onChangeSite }: Props) {
-  const { site, date, correction, hilo, slack, tideCurve, currCurve, currCurveAvailable, dayRating, maxFlood, maxEbb, tRange, slackEvents, windows, unitHeight, unitVelocity } = planData
+  const { site, date, correction, hilo, slack, tideCurve, currCurve, currCurveAvailable, tideCurveFromSeattle, dayRating, maxFlood, maxEbb, tRange, slackEvents, windows, unitHeight, unitVelocity } = planData
   const now       = new Date()
   const isToday   = date.toDateString() === now.toDateString()
   const corrActive = correction?.active && (correction.n ?? 0) >= MIN_OBS
@@ -187,6 +187,7 @@ export default function BriefingView({ planData, currName, tideName, onChangeDat
         unitVelocity={unitVelocity}
         corrDelta={corrActive ? (correction?.meanDelta ?? null) : null}
         currCurveAvailable={currCurveAvailable}
+        tideCurveFromSeattle={tideCurveFromSeattle}
       />
 
       {/* Conditions summary */}
